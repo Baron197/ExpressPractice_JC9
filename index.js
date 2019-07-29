@@ -1,5 +1,6 @@
 var express = require('express')
 var cors = require('cors')
+var bodyParser = require('body-parser')
 
 var port = 1997
 
@@ -23,6 +24,7 @@ var arr = [{
 var app = express()
 
 app.use(cors())
+app.use(bodyParser.json())
 
 app.get('/', (req,res) => {
     res.send('<h1>Hello Guys</h1>')
@@ -36,9 +38,9 @@ app.get('/products/:id', (req,res) => {
     console.log('Masuk /products/:id')
     // console.log(req.params.id)
     // console.log(typeof(req.params.id))
-    var newArr = arr.filter((item) => item.id == req.params.id)
+    // var newArr = arr.filter((item) => item.id == req.params.id)
     // console.log(newArr)
-    res.send(newArr)
+    res.send(arr.filter((item) => item.id == req.params.id)[0])
 })
 
 app.get('/products', (req,res) => {
@@ -58,6 +60,22 @@ app.get('/products', (req,res) => {
     }
 
     res.send(newArr)
+})
+
+app.get('/test', (req,res) => {
+    try {
+        console.loog('Masuk Test')
+        res.status(202).send('Request ke Test berhasil')
+    } catch(err) {
+        console.log(err.message)
+        res.status(500).send(err.message)
+    }
+})
+
+app.post('/addproduct', (req,res) => {
+    console.log(req.body)
+    arr.push(req.body)
+    res.status(201).send({ message: 'Add Product Success!', newData: arr })
 })
 
 app.listen(port, () => console.log(`API aktif di port ${port}`))
