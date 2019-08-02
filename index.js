@@ -1,8 +1,17 @@
 var express = require('express')
 var cors = require('cors')
 var bodyParser = require('body-parser')
+var mysql = require('mysql')
 
 var port = 1997
+
+var db = mysql.createConnection({
+    host: 'localhost',
+    user: 'saitama',
+    password: 'abc123',
+    database: 'popokkece',
+    port: 3306
+})
 
 var arr = [{
     id:1,
@@ -28,6 +37,40 @@ app.use(bodyParser.json())
 
 app.get('/', (req,res) => {
     res.send('<h1>Hello Guys</h1>')
+})
+
+app.get('/users', (req,res) => {
+    if(!req.query.username) {
+        req.query.username = ''
+    }
+    if(!req.query.password) {
+        req.query.password = ''
+    }
+    var sql = `select u.*, r.nama as roleName 
+                from users u
+                left join roles r
+                on u.roleId = r.id
+                where username like '%${req.query.username}%'
+                and password like '%${req.query.password}%'`;
+    if(req.query.usiaMin) {
+        sql += ` and usia >= ${req.query.usiaMin}`
+    }
+    if(req.query.usiaMax) {
+        sql += ` and usia <= ${req.query.usiaMax}`
+    }
+    if(req.query.email) {
+        sql += ` and email like '%${req.query.email}%'`
+    }
+    if(req.query.role) {
+        sql += ` and r.nama = '${req.query.role}'`
+    }
+
+    db.query(sql, (err,results) => {
+        if (err) res.status(500).send(err);
+        
+        console.log(results)
+        res.status(200).send(results)
+    })
 })
 
 app.get('/home', (req,res) => {
