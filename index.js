@@ -121,4 +121,65 @@ app.post('/addproduct', (req,res) => {
     res.status(201).send({ message: 'Add Product Success!', newData: arr })
 })
 
+app.get('/category', (req,res) => {
+    var sql = 'Select * from category;'
+    db.query(sql, (err,results) => {
+        if (err) res.status(500).send(err);
+        
+        console.log(results)
+        res.status(200).send(results)
+    })
+})
+
+app.post('/category', (req,res) => {
+    var data = req.body;
+    console.log(data)
+    var sql = 'Insert into category set ?';
+    db.query(sql,data,(err, results) => {
+        if(err) {
+            res.status(500).send(err)
+        }
+        
+        sql = 'Select * from category;'
+        db.query(sql, (err,results) => {
+            if (err) res.status(500).send(err);
+            
+            console.log(results)
+            res.status(200).send(results)
+        })
+    })
+})
+
+app.delete('/category/:id', (req,res) => {
+    var sql = `Delete from category where id = ${req.params.id}`
+    db.query(sql, (err,results) => {
+        if(err) res.status(500).send(err)
+
+        console.log(results)
+        sql = 'Select * from category;'
+        db.query(sql, (err,results) => {
+            if (err) res.status(500).send(err);
+            
+            console.log(results)
+            res.status(200).send(results)
+        })
+    })
+})
+
+app.put('/category/:id', (req,res) => {
+    var sql = `Update category set ? where id = ${req.params.id}`;
+    db.query(sql, req.body, (err,results) => {
+        if(err) res.status(500).send(err)
+
+        console.log(results)
+        sql = 'Select * from category;'
+        db.query(sql, (err,results) => {
+            if (err) res.status(500).send(err);
+            
+            console.log(results)
+            res.status(200).send(results)
+        })
+    })
+})
+
 app.listen(port, () => console.log(`API aktif di port ${port}`))
