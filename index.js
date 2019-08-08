@@ -1,28 +1,8 @@
 var express = require('express')
 var cors = require('cors')
 var bodyParser = require('body-parser')
-var mysql = require('mysql')
 
 var port = 1997
-
-var db = mysql.createConnection({
-    host: 'db4free.net',
-    user: 'saitama',
-    password: 'kecapabc123',
-    database: 'popokkeces',
-    port: 3306
-})
-
-// var db = mysql.createConnection({
-//     host: 'localhost',
-//     user: 'saitama',
-//     password: 'abc123',
-//     database: 'popokkece',
-//     port: 3306
-// })
-
-var { MongoClient, ObjectID } = require('mongodb');
-var url = `mongodb+srv://baron197:kecapabc123@clusterlatihan-xglmp.gcp.mongodb.net/test?retryWrites=true&w=majority`;
 
 var arr = [{
     id:1,
@@ -49,6 +29,14 @@ app.use(bodyParser.json())
 app.get('/', (req,res) => {
     res.send('<h1>Hello Guys</h1>')
 })
+
+const {
+    mongoRouter,
+    mysqlRouter
+} = require('./routers')
+
+app.use('/mongo', mongoRouter)
+app.use('/mysql', mysqlRouter)
 
 app.get('/users', (req,res) => {
     if(!req.query.username) {
@@ -130,182 +118,6 @@ app.post('/addproduct', (req,res) => {
     console.log(req.body)
     arr.push(req.body)
     res.status(201).send({ message: 'Add Product Success!', newData: arr })
-})
-
-app.get('/category', (req,res) => {
-    var sql = 'Select * from category;'
-    db.query(sql, (err,results) => {
-        if (err) res.status(500).send(err);
-        
-        console.log(results)
-        res.status(200).send(results)
-    })
-})
-
-app.post('/category', (req,res) => {
-    var data = req.body;
-    console.log(data)
-    var sql = 'Insert into category set ?';
-    db.query(sql,data,(err, results) => {
-        if(err) {
-            res.status(500).send(err)
-        }
-        
-        sql = 'Select * from category;'
-        db.query(sql, (err,results) => {
-            if (err) res.status(500).send(err);
-            
-            console.log(results)
-            res.status(200).send(results)
-        })
-    })
-})
-
-app.delete('/category/:id', (req,res) => {
-    var sql = `Delete from category where id = ${req.params.id}`
-    db.query(sql, (err,results) => {
-        if(err) res.status(500).send(err)
-
-        console.log(results)
-        sql = 'Select * from category;'
-        db.query(sql, (err,results) => {
-            if (err) res.status(500).send(err);
-            
-            console.log(results)
-            res.status(200).send(results)
-        })
-    })
-})
-
-app.put('/category/:id', (req,res) => {
-    var sql = `Update category set ? where id = ${req.params.id}`;
-    db.query(sql, req.body, (err,results) => {
-        if(err) res.status(500).send(err)
-
-        console.log(results)
-        sql = 'Select * from category;'
-        db.query(sql, (err,results) => {
-            if (err) res.status(500).send(err);
-            
-            console.log(results)
-            res.status(200).send(results)
-        })
-    })
-})
-
-app.get('/movies', (req,res) => {    
-    if(!req.query.title) {
-        req.query.title = ''
-    }
-    if(!req.query.limit) {
-        req.query.limit = 20
-    }
-    var col = {}
-    if(req.query.columns) {
-        req.query.columns.forEach((item) => {
-            col[item] = 1
-        })
-    }
-    MongoClient.connect(url, (err,client) => {
-        if (err) res.status(500).send(err)
-        
-        var moviesCol = client.db('sample_mflix').collection('movies');
-        moviesCol.find({ title: { '$regex': req.query.title, '$options': 'i' } },col).limit(parseInt(req.query.limit)).toArray((err, docs) => {
-            client.close();
-            if (err) res.status(500).send(err)
-
-            // console.log(docs);
-            res.status(200).send(docs);
-        })
-    })
-})
-
-
-
-
-
-
-// app.get('/movies', (req,res) => {
-//     if(!req.query.title) {
-//         req.query.title = ''
-//     }
-//     var col = {}
-//     if(req.query.columns) {
-//         req.query.columns.forEach((item) => {
-//             col[item] = 1
-//         })
-//     }
-//     if(!req.query.limit) {
-//         req.query.limit=0
-//     }
-    
-//     MongoClient.connect(url, (err,client) => {
-//         var moviesCol = client.db('sample_mflix').collection('movies');
-//         moviesCol.find({ title: { '$regex': req.query.title, '$options': 'i' } }, col).limit(parseInt(req.query.limit)).toArray((err1, docs) => {
-//             client.close();
-//             if (err1) res.status(500).send(err1)
-
-//             // console.log(docs);
-//             res.status(200).send(docs);
-//         })
-//     })
-// })
-
-app.get('/moviestitles', (req,res) => {
-    if(!req.query.title) {
-        req.query.title = ''
-    }
-    MongoClient.connect(url, (err,client) => {
-        var moviesCol = client.db('sample_mflix').collection('movies');
-        moviesCol.find({ title: { '$regex': req.query.title, '$options': 'i' } }, { title: 1 }).limit(10).toArray((err1, docs) => {
-            client.close();
-            if (err1) res.status(500).send(err1)
-
-            // console.log(docs);
-            res.status(200).send(docs);
-        })
-    })
-})
-
-app.post('/movies', (req,res) => {
-    console.log(req.body);
-    MongoClient.connect(url, (err,client) => {
-        var moviesCol = client.db('sample_mflix').collection('movies');
-        moviesCol.insertMany(req.body.data, (err1, result) => {
-            client.close();
-            if (err1) res.status(500).send(err1)
-
-            res.status(200).send(result);
-        })
-    })
-})
-
-app.delete('/movies/:id', (req,res) => {
-    MongoClient.connect(url, (err,client) => {
-        var moviesCol = client.db('sample_mflix').collection('movies');
-        moviesCol.deleteOne({ _id: new ObjectID(req.params.id) }, (err, result) => {
-            client.close();
-            if(err) res.status(500).send(err)
-            
-            res.status(200).send(result);
-        })
-    })
-})
-
-app.put('/movies/:id', (req,res) => {
-    if(!req.body.unset) {
-        req.body.unset = { "kucing": 1 }
-    }
-
-    MongoClient.connect(url, (err,client) => {
-        var moviesCol = client.db('sample_mflix').collection('movies');
-        moviesCol.updateOne({ _id: new ObjectID(req.params.id) }, {$set: req.body.set, $unset: req.body.unset }, (err1, result) => {
-            client.close();
-            if(err) res.status(500).send(err)
-            
-            res.status(200).send(result);
-        })
-    })
 })
 
 app.listen(port, () => console.log(`API aktif di port ${port}`))
