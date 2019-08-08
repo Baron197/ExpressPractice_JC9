@@ -6,12 +6,23 @@ var mysql = require('mysql')
 var port = 1997
 
 var db = mysql.createConnection({
-    host: 'localhost',
+    host: 'db4free.net',
     user: 'saitama',
-    password: 'abc123',
-    database: 'popokkece',
+    password: 'kecapabc123',
+    database: 'popokkeces',
     port: 3306
 })
+
+// var db = mysql.createConnection({
+//     host: 'localhost',
+//     user: 'saitama',
+//     password: 'abc123',
+//     database: 'popokkece',
+//     port: 3306
+// })
+
+var { MongoClient, ObjectID } = require('mongodb');
+var url = `mongodb+srv://baron197:kecapabc123@clusterlatihan-xglmp.gcp.mongodb.net/test?retryWrites=true&w=majority`;
 
 var arr = [{
     id:1,
@@ -182,4 +193,130 @@ app.put('/category/:id', (req,res) => {
     })
 })
 
+app.get('/movies', (req,res) => {    
+    if(!req.query.title) {
+        req.query.title = ''
+    }
+    if(!req.query.limit) {
+        req.query.limit = 20
+    }
+    var col = {}
+    if(req.query.columns) {
+        req.query.columns.forEach((item) => {
+            col[item] = 1
+        })
+    }
+    MongoClient.connect(url, (err,client) => {
+        if (err) res.status(500).send(err)
+        
+        var moviesCol = client.db('sample_mflix').collection('movies');
+        moviesCol.find({ title: { '$regex': req.query.title, '$options': 'i' } },col).limit(parseInt(req.query.limit)).toArray((err, docs) => {
+            client.close();
+            if (err) res.status(500).send(err)
+
+            // console.log(docs);
+            res.status(200).send(docs);
+        })
+    })
+})
+
+
+
+
+
+
+// app.get('/movies', (req,res) => {
+//     if(!req.query.title) {
+//         req.query.title = ''
+//     }
+//     var col = {}
+//     if(req.query.columns) {
+//         req.query.columns.forEach((item) => {
+//             col[item] = 1
+//         })
+//     }
+//     if(!req.query.limit) {
+//         req.query.limit=0
+//     }
+    
+//     MongoClient.connect(url, (err,client) => {
+//         var moviesCol = client.db('sample_mflix').collection('movies');
+//         moviesCol.find({ title: { '$regex': req.query.title, '$options': 'i' } }, col).limit(parseInt(req.query.limit)).toArray((err1, docs) => {
+//             client.close();
+//             if (err1) res.status(500).send(err1)
+
+//             // console.log(docs);
+//             res.status(200).send(docs);
+//         })
+//     })
+// })
+
+app.get('/moviestitles', (req,res) => {
+    if(!req.query.title) {
+        req.query.title = ''
+    }
+    MongoClient.connect(url, (err,client) => {
+        var moviesCol = client.db('sample_mflix').collection('movies');
+        moviesCol.find({ title: { '$regex': req.query.title, '$options': 'i' } }, { title: 1 }).limit(10).toArray((err1, docs) => {
+            client.close();
+            if (err1) res.status(500).send(err1)
+
+            // console.log(docs);
+            res.status(200).send(docs);
+        })
+    })
+})
+
+app.post('/movies', (req,res) => {
+    console.log(req.body);
+    MongoClient.connect(url, (err,client) => {
+        var moviesCol = client.db('sample_mflix').collection('movies');
+        moviesCol.insertMany(req.body.data, (err1, result) => {
+            client.close();
+            if (err1) res.status(500).send(err1)
+
+            res.status(200).send(result);
+        })
+    })
+})
+
+app.delete('/movies/:id', (req,res) => {
+    MongoClient.connect(url, (err,client) => {
+        var moviesCol = client.db('sample_mflix').collection('movies');
+        moviesCol.deleteOne({ _id: new ObjectID(req.params.id) }, (err, result) => {
+            client.close();
+            if(err) res.status(500).send(err)
+            
+            res.status(200).send(result);
+        })
+    })
+})
+
+app.put('/movies/:id', (req,res) => {
+    if(!req.body.unset) {
+        req.body.unset = { "kucing": 1 }
+    }
+
+    MongoClient.connect(url, (err,client) => {
+        var moviesCol = client.db('sample_mflix').collection('movies');
+        moviesCol.updateOne({ _id: new ObjectID(req.params.id) }, {$set: req.body.set, $unset: req.body.unset }, (err1, result) => {
+            client.close();
+            if(err) res.status(500).send(err)
+            
+            res.status(200).send(result);
+        })
+    })
+})
+
 app.listen(port, () => console.log(`API aktif di port ${port}`))
+
+// var obj = {}
+// obj.nama = 'baron'
+// obj['nama'] = 'baron'
+// var listcol = ['title','year']
+// for(var i = 0; i < listcol.length; i++) {
+//     obj[listcol[i]] = 1
+// }
+// listcol.forEach((item) => {
+//     obj[item] = 1
+// })
